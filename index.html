@@ -721,8 +721,22 @@
 
   const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
 
-  let selectedDays = new Set();
+  let selectedDaysByMonth = {}; // clave: "mes-anio", valor: Set de dias
   let history = [];
+
+  function getMonthKey() {
+    const month = parseInt(document.getElementById('monthSelect').value);
+    const year = parseInt(document.getElementById('yearSelect').value);
+    return `${month}-${year}`;
+  }
+
+  function getSelectedDays() {
+    const key = getMonthKey();
+    if (!selectedDaysByMonth[key]) {
+      selectedDaysByMonth[key] = new Set();
+    }
+    return selectedDaysByMonth[key];
+  }
 
   function init() {
     const monthSelect = document.getElementById('monthSelect');
@@ -773,8 +787,9 @@
 
     title.textContent = `${MONTHS[month]} ${year}`;
     grid.innerHTML = '';
-    selectedDays.clear();
     updateResults();
+
+    const selectedDays = getSelectedDays();
 
     const firstDay = new Date(year, month, 1);
     let startDay = firstDay.getDay();
@@ -807,6 +822,9 @@
       `;
 
       if (type !== 'closed') {
+        if (selectedDays.has(d)) {
+          cell.classList.add('selected');
+        }
         cell.addEventListener('click', () => toggleDay(d, cell));
       }
 
@@ -815,6 +833,7 @@
   }
 
   function toggleDay(day, cell) {
+    const selectedDays = getSelectedDays();
     if (selectedDays.has(day)) {
       selectedDays.delete(day);
       cell.classList.remove('selected');
@@ -829,6 +848,7 @@
     const month = parseInt(document.getElementById('monthSelect').value);
     const year = parseInt(document.getElementById('yearSelect').value);
     const name = document.getElementById('workerName').value.trim();
+    const selectedDays = getSelectedDays();
 
     let normalCount = 0;
     let premiumCount = 0;
@@ -870,7 +890,8 @@
     }
 
     const btnSave = document.getElementById('btnSave');
-    btnSave.disabled = selectedDays.size === 0 || !name;
+    const hasAnySelection = Object.values(selectedDaysByMonth).some(s => s.size > 0);
+    btnSave.disabled = !hasAnySelection || !name;
   }
 
   function formatCurrency(amount) {
@@ -878,36 +899,46 @@
   }
 
   function clearSelection() {
-    selectedDays.clear();
+    const key = getMonthKey();
+    if (selectedDaysByMonth[key]) {
+      selectedDaysByMonth[key].clear();
+    }
     document.querySelectorAll('.day-cell.selected').forEach(c => c.classList.remove('selected'));
     updateResults();
   }
 
   function saveRecord() {
     const name = document.getElementById('workerName').value.trim();
-    const month = parseInt(document.getElementById('monthSelect').value);
-    const year = parseInt(document.getElementById('yearSelect').value);
-
-    if (!name || selectedDays.size === 0) return;
+    if (!name) return;
 
     let normalCount = 0;
     let premiumCount = 0;
     let total = 0;
+    let monthsIncluded = [];
 
-    selectedDays.forEach(d => {
-      const date = new Date(year, month, d);
-      const dow = date.getDay();
-      const type = getDayType(dow);
-      const price = getDayPrice(dow);
-      if (type === 'normal') normalCount++;
-      if (type === 'premium') premiumCount++;
-      total += price;
-    });
+    for (const key in selectedDaysByMonth) {
+      const days = selectedDaysByMonth[key];
+      if (days.size === 0) continue;
+
+      const [m, y] = key.split('-').map(Number);
+      monthsIncluded.push(`${MONTHS[m]} ${y}`);
+
+      days.forEach(d => {
+        const date = new Date(y, m, d);
+        const dow = date.getDay();
+        const type = getDayType(dow);
+        const price = getDayPrice(dow);
+        if (type === 'normal') normalCount++;
+        if (type === 'premium') premiumCount++;
+        total += price;
+      });
+    }
+
+    if (total === 0) return;
 
     const record = {
       name,
-      month: MONTHS[month],
-      year,
+      months: monthsIncluded.join(', '),
       normalDays: normalCount,
       premiumDays: premiumCount,
       totalDays: normalCount + premiumCount,
@@ -916,9 +947,11 @@
 
     history.unshift(record);
     renderHistory();
-    clearSelection();
+
+    // Limpiar todo
+    selectedDaysByMonth = {};
     document.getElementById('workerName').value = '';
-    updateResults();
+    renderCalendar();
     showToast(`Registro guardado para ${record.name}`);
   }
 
@@ -933,7 +966,7 @@
       <div class="history-item">
         <div class="history-info">
           <div class="history-name">${r.name}</div>
-          <div class="history-detail">${r.month} ${r.year} &mdash; ${r.totalDays} dias (${r.normalDays} normales, ${r.premiumDays} premium)</div>
+          <div class="history-detail">${r.months} &mdash; ${r.totalDays} dias (${r.normalDays} normales, ${r.premiumDays} premium)</div>
         </div>
         <div class="history-amount">${formatCurrency(r.total)}</div>
       </div>
