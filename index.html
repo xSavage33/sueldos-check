@@ -863,7 +863,7 @@
     var normalCount = 0;
     var premiumCount = 0;
     var total = 0;
-    var monthsIncluded = [];
+    var allDates = []; // almacena objetos Date para encontrar el rango
 
     var keys = Object.keys(selectedDaysByMonth);
     for (var k = 0; k < keys.length; k++) {
@@ -874,7 +874,6 @@
       var parts = key.split('-');
       var m = parseInt(parts[0]);
       var y = parseInt(parts[1]);
-      monthsIncluded.push(MONTHS[m] + ' ' + y);
 
       var daysArr = Array.from(set);
       for (var i = 0; i < daysArr.length; i++) {
@@ -886,14 +885,26 @@
         if (type === 'normal') normalCount++;
         if (type === 'premium') premiumCount++;
         total += price;
+        allDates.push(date);
       }
     }
 
     if (total === 0) return;
 
+    // Ordenar fechas para encontrar la primera y la ultima
+    allDates.sort(function(a, b) { return a.getTime() - b.getTime(); });
+    var firstDate = allDates[0];
+    var lastDate = allDates[allDates.length - 1];
+
+    var rangeStart = firstDate.getDate() + ' ' + MONTHS[firstDate.getMonth()] + ' ' + firstDate.getFullYear();
+    var rangeEnd = lastDate.getDate() + ' ' + MONTHS[lastDate.getMonth()] + ' ' + lastDate.getFullYear();
+
+    // Si es el mismo dia, mostrar solo uno
+    var dateRange = rangeStart === rangeEnd ? rangeStart : rangeStart + ' - ' + rangeEnd;
+
     historyRecords.unshift({
       name: name,
-      months: monthsIncluded.join(', '),
+      dateRange: dateRange,
       normalDays: normalCount,
       premiumDays: premiumCount,
       totalDays: normalCount + premiumCount,
@@ -921,7 +932,8 @@
       html += '<div class="history-item">';
       html += '<div class="history-info">';
       html += '<div class="history-name">' + r.name + '</div>';
-      html += '<div class="history-detail">' + r.months + ' &mdash; ' + r.totalDays + ' dias (' + r.normalDays + ' normales, ' + r.premiumDays + ' premium)</div>';
+      html += '<div class="history-detail">' + r.dateRange + '</div>';
+      html += '<div class="history-detail">' + r.totalDays + ' dias (' + r.normalDays + ' normales, ' + r.premiumDays + ' premium)</div>';
       html += '</div>';
       html += '<div class="history-amount">' + formatCurrency(r.total) + '</div>';
       html += '</div>';
