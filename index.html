@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Sueldos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #1a1d21;
+    --bg-secondary: #22262b;
+    --bg-card: #282c32;
+    --bg-hover: #2e3338;
+    --border: #363b42;
+    --border-light: #3e444c;
+    --text-primary: #e8eaed;
+    --text-secondary: #9aa0a8;
+    --text-muted: #6b7280;
+    --green-primary: #2d6a4f;
+    --green-light: #40916c;
+    --green-accent: #52b788;
+    --green-glow: rgba(82, 183, 136, 0.15);
+    --green-dark: #1b4332;
+    --red-accent: #e05252;
+    --orange-accent: #e0a352;
+    --day-normal: #2d6a4f;
+    --day-premium: #b8860b;
+    --day-closed: #4a3535;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.4);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-xs: 6px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(45, 106, 79, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(27, 67, 50, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green-glow);
+    border: 1px solid rgba(82, 183, 136, 0.2);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--green-accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .header-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green-accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .header h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  .header p {
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  .input-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .input-group {
+    display: flex;
+    gap: 16px;
+    align-items: end;
+    flex-wrap: wrap;
+  }
+
+  .field {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .field input, .field select {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .field input:focus, .field select:focus {
+    border-color: var(--green-light);
+    box-shadow: 0 0 0 3px var(--green-glow);
+  }
+
+  .field input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .field select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .calendar-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .calendar-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+
+  .legend-dot.normal { background: var(--day-normal); }
+  .legend-dot.premium { background: var(--day-premium); }
+  .legend-dot.closed { background: var(--day-closed); }
+
+  .weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .weekday {
+    text-align: center;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 8px 0;
+  }
+
+  .weekday.closed-day {
+    color: var(--red-accent);
+    opacity: 0.6;
+  }
+
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .day-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xs);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    border: 1px solid transparent;
+    user-select: none;
+  }
+
+  .day-cell.empty {
+    cursor: default;
+  }
+
+  .day-cell.normal {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+  }
+
+  .day-cell.normal:hover {
+    background: var(--bg-hover);
+    border-color: var(--green-primary);
+    color: var(--text-primary);
+  }
+
+  .day-cell.premium {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+  }
+
+  .day-cell.premium:hover {
+    background: var(--bg-hover);
+    border-color: var(--day-premium);
+    color: var(--text-primary);
+  }
+
+  .day-cell.closed {
+    background: rgba(74, 53, 53, 0.3);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    text-decoration: line-through;
+    opacity: 0.5;
+  }
+
+  .day-cell.selected.normal {
+    background: var(--day-normal);
+    color: #fff;
+    border-color: var(--green-accent);
+    box-shadow: 0 0 12px rgba(45, 106, 79, 0.4);
+    font-weight: 700;
+  }
+
+  .day-cell.selected.premium {
+    background: var(--day-premium);
+    color: #fff;
+    border-color: var(--orange-accent);
+    box-shadow: 0 0 12px rgba(184, 134, 11, 0.4);
+    font-weight: 700;
+  }
+
+  .day-cell .price-tag {
+    position: absolute;
+    bottom: 2px;
+    font-size: 7px;
+    letter-spacing: 0.3px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    font-weight: 600;
+  }
+
+  .day-cell:hover .price-tag,
+  .day-cell.selected .price-tag {
+    opacity: 0.8;
+  }
+
+  .day-cell.normal .price-tag { color: var(--green-accent); }
+  .day-cell.premium .price-tag { color: var(--orange-accent); }
+
+  .results-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .results-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .btn-clear {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: var(--radius-xs);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .btn-clear:hover {
+    border-color: var(--red-accent);
+    color: var(--red-accent);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .stat-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .stat-value.green { color: var(--green-accent); }
+  .stat-value.gold { color: var(--orange-accent); }
+
+  .total-bar {
+    background: linear-gradient(135deg, var(--green-dark), var(--green-primary));
+    border: 1px solid var(--green-light);
+    border-radius: var(--radius-sm);
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 0 30px rgba(45, 106, 79, 0.2);
+  }
+
+  .total-label {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
+  }
+
+  .total-label .worker-name {
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .total-amount {
+    font-family: 'Space Mono', monospace;
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .history-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .history-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .history-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 32px 0;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .history-item:hover {
+    border-color: var(--border-light);
+  }
+
+  .history-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .history-name {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .history-detail {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .history-amount {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--green-accent);
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, var(--green-primary), var(--green-light));
+    border: none;
+    color: #fff;
+    padding: 12px 28px;
+    border-radius: var(--radius-xs);
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(45, 106, 79, 0.3);
+  }
+
+  .btn-save:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(45, 106, 79, 0.4);
+  }
+
+  .btn-save:active {
+    transform: translateY(0);
+  }
+
+  .btn-save:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .actions-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .selected-days-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .selected-day-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .selected-day-chip.normal {
+    background: rgba(45, 106, 79, 0.2);
+    color: var(--green-accent);
+    border: 1px solid rgba(45, 106, 79, 0.3);
+  }
+
+  .selected-day-chip.premium {
+    background: rgba(184, 134, 11, 0.2);
+    color: var(--orange-accent);
+    border: 1px solid rgba(184, 134, 11, 0.3);
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--green-primary);
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 100;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  @media (max-width: 600px) {
+    .app { padding: 20px 12px 40px; }
+    .header h1 { font-size: 22px; }
+    .input-group { flex-direction: column; }
+    .total-bar { flex-direction: column; gap: 8px; text-align: center; }
+    .total-amount { font-size: 26px; }
+    .day-cell { font-size: 12px; }
+    .legend { justify-content: center; }
+    .calendar-header { flex-direction: column; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="header-badge">
+      <span class="dot"></span>
+      Sistema de Nomina
+    </div>
+    <h1>Calculadora de Sueldos</h1>
+    <p>Selecciona los dias trabajados para calcular el pago</p>
+  </div>
+
+  <div class="input-section">
+    <div class="input-group">
+      <div class="field">
+        <label>Nombre del trabajador</label>
+        <input type="text" id="workerName" placeholder="Ej: Juan Perez">
+      </div>
+      <div class="field" style="max-width: 220px;">
+        <label>Mes</label>
+        <select id="monthSelect"></select>
+      </div>
+      <div class="field" style="max-width: 140px;">
+        <label>Anio</label>
+        <select id="yearSelect"></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="calendar-section">
+    <div class="calendar-header">
+      <div class="calendar-title" id="calendarTitle">Calendario</div>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot normal"></div>
+          <span>$45.000</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot premium"></div>
+          <span>$60.000</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot closed"></div>
+          <span>Cerrado</span>
+        </div>
+      </div>
+    </div>
+    <div class="weekdays">
+      <div class="weekday">Lun</div>
+      <div class="weekday closed-day">Mar</div>
+      <div class="weekday">Mie</div>
+      <div class="weekday">Jue</div>
+      <div class="weekday">Vie</div>
+      <div class="weekday">Sab</div>
+      <div class="weekday">Dom</div>
+    </div>
+    <div class="days-grid" id="daysGrid"></div>
+  </div>
+
+  <div class="results-section">
+    <div class="results-header">
+      <div class="results-title">Resumen</div>
+      <button class="btn-clear" onclick="clearSelection()">Limpiar seleccion</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Dias normales</div>
+        <div class="stat-value green" id="normalDays">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Dias premium</div>
+        <div class="stat-value gold" id="premiumDays">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total dias</div>
+        <div class="stat-value" id="totalDays">0</div>
+      </div>
+    </div>
+    <div class="total-bar">
+      <div class="total-label">
+        Total a pagar
+        <span class="worker-name" id="totalWorkerName"></span>
+      </div>
+      <div class="total-amount" id="totalAmount">$0</div>
+    </div>
+    <div class="selected-days-list" id="selectedDaysList"></div>
+    <div class="actions-bar">
+      <button class="btn-save" id="btnSave" onclick="saveRecord()" disabled>Guardar registro</button>
+    </div>
+  </div>
+
+  <div class="history-section">
+    <div class="history-title">Historial de registros</div>
+    <div id="historyContainer">
+      <div class="history-empty">No hay registros guardados</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const PRICE_NORMAL = 45000;
+  const PRICE_PREMIUM = 60000;
+
+  const MONTHS = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+
+  let selectedDays = new Set();
+  let history = [];
+
+  function init() {
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
+    const now = new Date();
+
+    MONTHS.forEach((m, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = m;
+      if (i === now.getMonth()) opt.selected = true;
+      monthSelect.appendChild(opt);
+    });
+
+    for (let y = 2024; y <= 2030; y++) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      if (y === now.getFullYear()) opt.selected = true;
+      yearSelect.appendChild(opt);
+    }
+
+    monthSelect.addEventListener('change', renderCalendar);
+    yearSelect.addEventListener('change', renderCalendar);
+
+    renderCalendar();
+  }
+
+  function getDayType(dayOfWeek) {
+    // 0=Domingo, 1=Lunes, 2=Martes, 3=Miercoles, 4=Jueves, 5=Viernes, 6=Sabado
+    if (dayOfWeek === 2) return 'closed';       // Martes
+    if (dayOfWeek === 5 || dayOfWeek === 6) return 'premium'; // Viernes y Sabado
+    return 'normal'; // Domingo, Lunes, Miercoles, Jueves
+  }
+
+  function getDayPrice(dayOfWeek) {
+    const type = getDayType(dayOfWeek);
+    if (type === 'closed') return 0;
+    if (type === 'premium') return PRICE_PREMIUM;
+    return PRICE_NORMAL;
+  }
+
+  function renderCalendar() {
+    const month = parseInt(document.getElementById('monthSelect').value);
+    const year = parseInt(document.getElementById('yearSelect').value);
+    const grid = document.getElementById('daysGrid');
+    const title = document.getElementById('calendarTitle');
+
+    title.textContent = `${MONTHS[month]} ${year}`;
+    grid.innerHTML = '';
+    selectedDays.clear();
+    updateResults();
+
+    const firstDay = new Date(year, month, 1);
+    let startDay = firstDay.getDay();
+    // Ajustar para que lunes sea el primer dia de la semana
+    startDay = startDay === 0 ? 6 : startDay - 1;
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Celdas vacias antes del primer dia
+    for (let i = 0; i < startDay; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'day-cell empty';
+      grid.appendChild(empty);
+    }
+
+    // Dias del mes
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      const dow = date.getDay();
+      const type = getDayType(dow);
+      const cell = document.createElement('div');
+      cell.className = `day-cell ${type}`;
+      cell.dataset.day = d;
+      cell.dataset.type = type;
+      cell.dataset.dow = dow;
+
+      cell.innerHTML = `
+        <span>${d}</span>
+        ${type !== 'closed' ? `<span class="price-tag">${type === 'premium' ? '60k' : '45k'}</span>` : ''}
+      `;
+
+      if (type !== 'closed') {
+        cell.addEventListener('click', () => toggleDay(d, cell));
+      }
+
+      grid.appendChild(cell);
+    }
+  }
+
+  function toggleDay(day, cell) {
+    if (selectedDays.has(day)) {
+      selectedDays.delete(day);
+      cell.classList.remove('selected');
+    } else {
+      selectedDays.add(day);
+      cell.classList.add('selected');
+    }
+    updateResults();
+  }
+
+  function updateResults() {
+    const month = parseInt(document.getElementById('monthSelect').value);
+    const year = parseInt(document.getElementById('yearSelect').value);
+    const name = document.getElementById('workerName').value.trim();
+
+    let normalCount = 0;
+    let premiumCount = 0;
+    let total = 0;
+    let dayDetails = [];
+
+    const sortedDays = Array.from(selectedDays).sort((a, b) => a - b);
+
+    sortedDays.forEach(d => {
+      const date = new Date(year, month, d);
+      const dow = date.getDay();
+      const type = getDayType(dow);
+      const price = getDayPrice(dow);
+
+      if (type === 'normal') normalCount++;
+      if (type === 'premium') premiumCount++;
+      total += price;
+
+      dayDetails.push({ day: d, type, price, dayName: DAY_NAMES[dow] });
+    });
+
+    document.getElementById('normalDays').textContent = normalCount;
+    document.getElementById('premiumDays').textContent = premiumCount;
+    document.getElementById('totalDays').textContent = normalCount + premiumCount;
+    document.getElementById('totalAmount').textContent = formatCurrency(total);
+
+    const nameDisplay = document.getElementById('totalWorkerName');
+    nameDisplay.textContent = name ? ` a ${name}` : '';
+
+    // Render chips
+    const chipContainer = document.getElementById('selectedDaysList');
+    if (dayDetails.length === 0) {
+      chipContainer.style.display = 'none';
+    } else {
+      chipContainer.style.display = 'flex';
+      chipContainer.innerHTML = dayDetails.map(d =>
+        `<span class="selected-day-chip ${d.type}">${d.day} ${d.dayName.substring(0, 3)}</span>`
+      ).join('');
+    }
+
+    const btnSave = document.getElementById('btnSave');
+    btnSave.disabled = selectedDays.size === 0 || !name;
+  }
+
+  function formatCurrency(amount) {
+    return '$' + amount.toLocaleString('es-CO');
+  }
+
+  function clearSelection() {
+    selectedDays.clear();
+    document.querySelectorAll('.day-cell.selected').forEach(c => c.classList.remove('selected'));
+    updateResults();
+  }
+
+  function saveRecord() {
+    const name = document.getElementById('workerName').value.trim();
+    const month = parseInt(document.getElementById('monthSelect').value);
+    const year = parseInt(document.getElementById('yearSelect').value);
+
+    if (!name || selectedDays.size === 0) return;
+
+    let normalCount = 0;
+    let premiumCount = 0;
+    let total = 0;
+
+    selectedDays.forEach(d => {
+      const date = new Date(year, month, d);
+      const dow = date.getDay();
+      const type = getDayType(dow);
+      const price = getDayPrice(dow);
+      if (type === 'normal') normalCount++;
+      if (type === 'premium') premiumCount++;
+      total += price;
+    });
+
+    const record = {
+      name,
+      month: MONTHS[month],
+      year,
+      normalDays: normalCount,
+      premiumDays: premiumCount,
+      totalDays: normalCount + premiumCount,
+      total
+    };
+
+    history.unshift(record);
+    renderHistory();
+    clearSelection();
+    document.getElementById('workerName').value = '';
+    updateResults();
+    showToast(`Registro guardado para ${record.name}`);
+  }
+
+  function renderHistory() {
+    const container = document.getElementById('historyContainer');
+    if (history.length === 0) {
+      container.innerHTML = '<div class="history-empty">No hay registros guardados</div>';
+      return;
+    }
+
+    container.innerHTML = `<div class="history-list">${history.map(r => `
+      <div class="history-item">
+        <div class="history-info">
+          <div class="history-name">${r.name}</div>
+          <div class="history-detail">${r.month} ${r.year} &mdash; ${r.totalDays} dias (${r.normalDays} normales, ${r.premiumDays} premium)</div>
+        </div>
+        <div class="history-amount">${formatCurrency(r.total)}</div>
+      </div>
+    `).join('')}</div>`;
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  // Escuchar cambios en el nombre
+  document.getElementById('workerName').addEventListener('input', updateResults);
+
+  init();
+</script>
+</body>
+</html>
